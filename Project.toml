@@ -1,0 +1,4 @@
+name = "AdventOfCode2022"
+uuid = "79bfa421-b4fd-41d1-8cfd-e57d9c314976"
+authors = ["Wolf Thomsen <git@wolthom.com>"]
+version = "0.1.0"
