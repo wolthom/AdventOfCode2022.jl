@@ -1,5 +1,9 @@
 module AdventOfCode2022
 
-greet() = print("Hello World!")
+# ~~~~~ Utility functions
+include("./load.jl")
+export load_day
+
+# ~~~~~ Solutions for the days
 
 end # module AdventOfCode2022
