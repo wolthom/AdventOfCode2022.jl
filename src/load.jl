@@ -3,16 +3,22 @@ using Downloads
 const DAY_SLUG = "DAY_NUMBER"
 const DOWNLOAD_URL = "https://adventofcode.com/2022/day/$DAY_SLUG/input"
 
-function load_day(day, session_token, data_dir="./data") 
+function load_day(day, session_token=nothing, data_dir="./data") 
     file_name = "day_$day.txt"
     file_path = joinpath(data_dir, file_name)
 
     # Just return the local data if the file exists
     if isfile(file_path)
-        return read(file_path)
+        return readchomp(file_path)
     end
     
     # Otherwise try downloading it
+    # Ensure session token was passed if download is required
+    if isnothing(session_token)
+        throw(ArgumentError("The data was not yet downloaded. The download requires passing a session token."))
+    end
+
+    # Create directory
     if !ispath(data_dir)
         mkdir(data_dir)
     elseif isfile(data_dir)
