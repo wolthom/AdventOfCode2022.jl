@@ -1,12 +1,3 @@
-using EnumX
-using MLStyle
-
-@data Hand begin
-    Rock
-    Paper
-    Scissors
-end
-
 const game_scores = (
     (3, 6, 0), # (Rock, X)
     (0, 3, 6), # (Paper, X)
