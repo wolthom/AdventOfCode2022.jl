@@ -34,7 +34,7 @@ end
 
 function download_day(day, session_token, target_path)
     url = replace(DOWNLOAD_URL, DAY_SLUG => string(day)) 
-    println(url)
+    println("Downloading data for day $day from: $url")
 
     Downloads.download(url, target_path, headers=Dict("Cookie" => "session=$session_token"))
 end
