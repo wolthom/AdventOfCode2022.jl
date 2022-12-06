@@ -1,3 +1,5 @@
+using IterTools
+
 function parse_day5(inp_str)
     (stacks_str, movements_str) = split(inp_str, "\n\n")
 
@@ -8,7 +10,9 @@ function parse_day5(inp_str)
             pushfirst!(stacks[idx], el)
         end
     end
-    stacks
+
+    movements = [get_movement(row) for row in eachsplit(movements_str, '\n')]
+    (stacks, movements)
 end
 
 function get_stack_entries(row)
@@ -16,7 +20,25 @@ function get_stack_entries(row)
     (row[i] for i in 2:4:num_chars) # Generator of stack entries
 end
 
-function  day5_part1(inp)
+function get_movement(row)
+    parts = split(row, ' ')
+    ntuple(idx -> parse(Int, parts[2*idx]), 3)
+end
+
+function  day5_part1(stacks, movements)
+    stacks = deepcopy(stacks)
+
+    for (n, from, to) in movements
+        from_stack = stacks[from]
+        to_stack = stacks[to]
+        for _ in 1:n
+            push!(to_stack, pop!(from_stack))
+        end
+    end
+
+    map(stacks) do stack
+        stack[end]
+    end |> Base.Fix2(join, "")
 end
 
 function  day5_part2(inp)
