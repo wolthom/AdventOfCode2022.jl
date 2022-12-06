@@ -17,4 +17,7 @@ function  day4_part1(inp)
 end
 
 function  day4_part2(inp)
+    sum(inp) do (s1, s2)
+        intersect(s1, s2) |> !isempty
+    end
 end
