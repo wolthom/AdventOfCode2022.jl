@@ -5,7 +5,7 @@ include("./load.jl")
 export load_day
 
 include("./run.jl")
-export run_days
+export @run_days
 
 # ~~~~~ Solutions for the days
 include("./day1.jl")
