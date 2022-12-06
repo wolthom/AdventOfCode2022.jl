@@ -28,6 +28,7 @@ end
 function  day5_part1(stacks, movements)
     stacks = deepcopy(stacks)
 
+    # Apply movement operations
     for (n, from, to) in movements
         from_stack = stacks[from]
         to_stack = stacks[to]
@@ -36,10 +37,27 @@ function  day5_part1(stacks, movements)
         end
     end
 
+    # Create output string
     map(stacks) do stack
         stack[end]
     end |> Base.Fix2(join, "")
 end
 
-function  day5_part2(inp)
+function  day5_part2(stacks, movements)
+    stacks = deepcopy(stacks)
+
+    # Apply movement operations
+    for (n, from, to) in movements
+        from_stack = stacks[from]
+        to_stack = stacks[to]
+        range = (length(from_stack)-n+1):length(from_stack)
+        @views crates = from_stack[range] 
+        append!(to_stack, crates)
+        deleteat!(from_stack, range)
+    end
+
+    # Create output string
+    map(stacks) do stack
+        stack[end]
+    end |> Base.Fix2(join, "")
 end
