@@ -4,6 +4,9 @@ module AdventOfCode2022
 include("./load.jl")
 export load_day
 
+include("./run.jl")
+export run_days
+
 # ~~~~~ Solutions for the days
 include("./day1.jl")
 export parse_day1, day1_part1, day1_part2

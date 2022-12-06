@@ -25,7 +25,7 @@ function get_movement(row)
     ntuple(idx -> parse(Int, parts[2*idx]), 3)
 end
 
-function  day5_part1(stacks, movements)
+function  day5_part1((stacks, movements))
     stacks = deepcopy(stacks)
 
     # Apply movement operations
@@ -43,7 +43,7 @@ function  day5_part1(stacks, movements)
     end |> Base.Fix2(join, "")
 end
 
-function  day5_part2(stacks, movements)
+function  day5_part2((stacks, movements))
     stacks = deepcopy(stacks)
 
     # Apply movement operations
