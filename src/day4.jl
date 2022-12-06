@@ -11,6 +11,9 @@ function to_range(range_str)
 end
 
 function  day4_part1(inp)
+    sum(inp) do (s1, s2)
+        s1 ⊆ s2 || s2 ⊆ s1
+    end
 end
 
 function  day4_part2(inp)
