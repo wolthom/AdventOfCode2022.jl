@@ -29,4 +29,7 @@ export parse_day6, day6_part1, day6_part2
 include("./day7.jl")
 export parse_day7, day7_part1, day7_part2
 
+include("./day8.jl")
+export parse_day8, day8_part1, day8_part2
+
 end # module AdventOfCode2022
