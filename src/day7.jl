@@ -3,12 +3,12 @@ struct FileEntry{T}
     size::Int64
 end
 
-struct DirEntry{T}
-    path::T
-end
-
 function path(e::FileEntry)
     e.path
+end
+
+struct DirEntry{T}
+    path::T
 end
 
 function path(d::DirEntry)
@@ -18,8 +18,9 @@ end
 const FsEntry = Union{FileEntry, DirEntry}
 
 function parse_day7(inp_str)
-    cur_path = ""
+    cur_path = "/"
     entries = Vector{FsEntry}()
+    push!(entries, DirEntry("/"))
     for line in eachsplit(inp_str, '\n')
         # Update current path if cd is encountered
         if startswith(line, "\$ cd")
@@ -42,7 +43,7 @@ function parse_cd(cur_path, line)
     else  
         new_path = joinpath(cur_path, split(line)[end])
     end
-    new_path
+    new_path == "" ? "/" : new_path
 end
 
 function parse_ls_line(cur_path, line)
@@ -52,6 +53,25 @@ function parse_ls_line(cur_path, line)
 end
 
 function day7_part1(inp)
+    dir_sizes = Vector{Tuple{DirEntry, Int64}}()
+    for idx in eachindex(inp)
+        e = inp[idx]
+        if e isa DirEntry
+            p = path(e)
+            same_path = x->(startswith(path(x), p))
+            sidx, eidx = (findfirst(same_path, inp), findlast(same_path, inp))
+            subarr = @view inp[sidx:eidx]
+            dir_size = Iterators.map(x->x.size, Iterators.filter(x->x isa FileEntry, subarr)) |> x -> sum(x; init=0)
+            0 < dir_size <= 100_000 && push!(dir_sizes, (e, dir_size)) 
+        else
+            continue
+        end
+    end
+    # sort!(dir_sizes; by=x->x[2])
+    # dir_sizes
+    sum(dir_sizes) do el
+        el[2]
+    end
 end
 
 function day7_part2(inp)
