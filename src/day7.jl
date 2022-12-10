@@ -105,3 +105,13 @@ function parse_day7(inp_str)
     end
     return root
 end
+
+function day7_part1(inp)
+    cache = Dict{String, Int64}()
+    root_size = entry_size(inp, cache)
+    
+    Iterators.filter(values(cache)) do v
+        v <= 100_000
+    end |> sum
+end
+
