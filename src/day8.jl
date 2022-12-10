@@ -36,3 +36,39 @@ function day8_part1(inp)
     length(vis_map) - sum(vis_map)
 end
 
+function count_visible(tree_height, trees, idxs)
+    range = 0
+    for idx in idxs
+        range += 1
+        if tree_height <= trees[idx]
+            break
+        end
+    end
+    range
+end
+
+function day8_part2(inp)
+    # Keep track of largest value 
+    max_score = 0
+
+    # Calculate relevant indices, this time including edges
+    all_idxs = CartesianIndices(inp)
+    first_idx, last_idx = (first(all_idxs), last(all_idxs))
+    unit_step = one(first_idx)
+    candidate_idxs = (first_idx + unit_step) : unit_step : (last_idx - unit_step)
+    
+    for tree_idx in candidate_idxs
+        (left_idxs, top_idxs, bottom_idxs, right_idxs) = scan_lines(tree_idx, first_idx, last_idx)
+        tree_height = inp[tree_idx]
+
+        score = count_visible(tree_height, inp, left_idxs) *
+                    count_visible(tree_height, inp, top_idxs) *
+                    count_visible(tree_height, inp, bottom_idxs) *
+                    count_visible(tree_height, inp, right_idxs)
+
+        if score > max_score
+            max_score = score
+        end
+    end
+    max_score
+end
