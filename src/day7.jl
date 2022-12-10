@@ -115,3 +115,25 @@ function day7_part1(inp)
     end |> sum
 end
 
+function day7_part2(inp)
+    total_space = 70_000_000
+    required_space = 30_000_000
+
+    # Calculate current space
+    cache = Dict{String, Int64}()
+    root_size = entry_size(inp, cache)
+
+    # Calculate how much space needs to be filled up
+    free_space = total_space - root_size
+    missing_space = required_space - free_space
+    
+    candidates = Iterators.filter(values(cache)) do v
+        v >= missing_space
+    end |> collect
+
+    # Sort ascending
+    sort!(candidates)
+
+    # Grab smallest value
+    candidates[begin]
+end
