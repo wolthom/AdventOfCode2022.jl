@@ -28,7 +28,7 @@ function day8_part1(inp)
     candidate_idxs = (first_idx + unit_step) : unit_step : (last_idx - unit_step)
 
     # For each tree, check in a line scan if it is visible
-    for tree_idx in candidate_idxs
+    @inbounds for tree_idx in candidate_idxs
         (left_idxs, top_idxs, bottom_idxs, right_idxs) = scan_lines(tree_idx, first_idx, last_idx)
         covers = x -> inp[x] >= inp[tree_idx]
         vis_map[tree_idx] = (any(covers, left_idxs) && any(covers, top_idxs) && any(covers, bottom_idxs) && any(covers, right_idxs))
@@ -38,7 +38,7 @@ end
 
 function count_visible(tree_height, trees, idxs)
     range = 0
-    for idx in idxs
+    @inbounds for idx in idxs
         range += 1
         if tree_height <= trees[idx]
             break
@@ -57,7 +57,7 @@ function day8_part2(inp)
     unit_step = one(first_idx)
     candidate_idxs = (first_idx + unit_step) : unit_step : (last_idx - unit_step)
     
-    for tree_idx in candidate_idxs
+    @inbounds for tree_idx in candidate_idxs
         (left_idxs, top_idxs, bottom_idxs, right_idxs) = scan_lines(tree_idx, first_idx, last_idx)
         tree_height = inp[tree_idx]
 
