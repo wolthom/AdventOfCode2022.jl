@@ -17,9 +17,6 @@ function scan_lines(tree_idx, first_idx, last_idx)
 end
 
 function day8_part1(inp)
-    # Allocate map that tracks visibility
-    vis_map = fill(false, size(inp))
-
     # Calculate relevant rectangle of trees
     #   Outer trees are guaranteed to be visible => no checking required
     all_idxs = CartesianIndices(inp)
@@ -28,12 +25,20 @@ function day8_part1(inp)
     candidate_idxs = (first_idx + unit_step) : unit_step : (last_idx - unit_step)
 
     # For each tree, check in a line scan if it is visible
+    hidden_count = 0
     @inbounds for tree_idx in candidate_idxs
-        (left_idxs, top_idxs, bottom_idxs, right_idxs) = scan_lines(tree_idx, first_idx, last_idx)
-        covers = x -> inp[x] >= inp[tree_idx]
-        vis_map[tree_idx] = (any(covers, left_idxs) && any(covers, top_idxs) && any(covers, bottom_idxs) && any(covers, right_idxs))
+        tree_height = inp[tree_idx]
+        cmp = >=(tree_height)
+        row, col = Tuple(tree_idx)
+        is_hidden = any(cmp, @view inp[row, begin:(col-1)]) && # Left -> Tree
+                        any(cmp, @view inp[begin:(row-1), col]) && # Top -> Tree   
+                        any(cmp, @view inp[(row+1):end, col]) && # Tree -> Bottom
+                        any(cmp, @view inp[row, (col+1):end]) # Tree -> Right
+        if is_hidden
+            hidden_count += 1
+        end
     end
-    length(vis_map) - sum(vis_map)
+    length(inp) - hidden_count
 end
 
 function count_visible(tree_height, trees, idxs)
