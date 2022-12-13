@@ -59,3 +59,14 @@ function reposition_segments!(rope)
     rope
 end
 
+function day9_part2(inp)
+    rope = fill((0,0), 10)
+    positions = Set{Tuple{Int, Int}}()
+    push!(positions, last(rope))
+
+    foreach(inp) do mov
+        move!(rope, mov, positions)
+    end
+
+    length(positions)
+end
