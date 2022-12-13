@@ -1,10 +1,3 @@
-using Accessors
-
-struct Pos
-    x::Int
-    y::Int
-end
-
 struct Mov
     dir::Tuple{Int, Int}
     steps::Int64
@@ -23,6 +16,46 @@ function to_mov(line)
     Mov(dir, steps)
 end
 
+function day9_part1(inp)
+    rope = fill((0,0), 2)
+    positions = Set{Tuple{Int, Int}}()
+    push!(positions, last(rope))
 
-function day9_part2(inp)
+    foreach(inp) do mov
+        move!(rope, mov, positions)
+    end
+
+    length(positions)
 end
+
+function move!(rope, mov, hist)
+    dx, dy = mov.dir
+
+    for _ in 1:mov.steps
+        head = rope[1]
+        rope[1] = (head[1] + dx, head[2] + dy)
+        reposition_segments!(rope)
+        push!(hist, last(rope))
+    end
+    rope
+end
+
+function reposition_segments!(rope)
+    for idx in 1:length(rope)-1
+        head, tail = (rope[idx], rope[idx + 1])
+
+        diff = head .- tail
+        dist = hypot(diff[1], diff[2])
+
+        # Return if no tail movement is required
+        dist < 2.0 && return tail
+
+        # Calculate (dx, dy)-step of tail
+        step = @. oneunit(diff) * sign(diff)    
+
+        # New tail
+        rope[idx + 1] = tail .+ step
+    end
+    rope
+end
+
