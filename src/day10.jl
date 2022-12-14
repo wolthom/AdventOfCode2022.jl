@@ -37,6 +37,7 @@ end
 function day10_part2(inp)
     inp = copy(inp)
     out = IOBuffer()
+    write(out, '\n')
 
     reg = 1
     pos_range = max(0, reg-1):min(39, reg+1)
