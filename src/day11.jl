@@ -36,10 +36,9 @@ function day11_part1(inp)
             # Each item of a monkey
             while !isempty(monkey.items)
                 monkey_activities[idx] += 1
-                item_level = popfirst!(monkey.items) |> monkey.op
-                new_level = div(item_level, 3)
-                new_level % monkey.cond == 0 ? push!(pos_target.items, new_level) : push!(neg_target.items, new_level)
-            end
+                worry_level = popfirst!(monkey.items) |> monkey.op
+                new_level = div(worry_level, 3)
+                new_level % monkey.cond == 0 ? push!(pos_target.items, new_level) : push!(neg_target.items, new_level) end
         end
         # show_monkeys(inp)
     end
@@ -57,4 +56,28 @@ function show_monkeys(inp)
 end
 
 function day11_part2(inp)
+    inp = deepcopy(inp)
+    # Track activity
+    monkey_activities = fill(0, length(inp))
+    max_mod = prod(map(m -> m.cond, inp))
+
+    # Run 10_000 rounds
+    for _ in 1:10_000
+        # Each monkey's round
+        for (idx, monkey) in enumerate(inp)
+            pos_target = inp[monkey.pos_target]
+            neg_target = inp[monkey.neg_target]
+            
+            # Each item of a monkey
+            while !isempty(monkey.items)
+                monkey_activities[idx] += 1
+                worry_level = popfirst!(monkey.items) |> monkey.op
+                new_level = worry_level % max_mod
+                new_level % monkey.cond == 0 ? push!(pos_target.items, new_level) : push!(neg_target.items, new_level)
+            end
+        end
+    end
+
+    sort!(monkey_activities)
+    reduce(*, last(monkey_activities, 2))
 end
