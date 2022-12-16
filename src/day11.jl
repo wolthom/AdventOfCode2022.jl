@@ -12,6 +12,7 @@ struct Monkey
     cond::Int
     pos_target::Int
     neg_target::Int
+    activities::Base.RefValue{Int}
 end
 
 function parse_day11(inp_str)
@@ -26,7 +27,7 @@ function parse_monkey(monkey_str)
     cond = parse(Int, @view(cond_str[22:end]))
     pos = parse(Int, @view(pos_str[30:end])) + 1
     neg = parse(Int, @view(neg_str[31:end])) + 1
-    Monkey(items, op, cond, pos, neg)
+    Monkey(items, op, cond, pos, neg, Ref(0))
 end
 
 function parse_operation(op_str)
@@ -34,7 +35,7 @@ function parse_operation(op_str)
     parts[1] == parts[3] && return Operation(Exp, 0)
 
     n = parse(Int, parts[3])
-    parts[2] == '+' ? Operation(Add, n) : Operation(Mul, n)
+    parts[2] == "+" ? Operation(Add, n) : Operation(Mul, n)
 end
 
 function apply_op(op, level)
@@ -50,55 +51,51 @@ function show_monkeys(inp)
     println()
 end
 
-function day11_part1(inp)
-    inp = deepcopy(inp)
-    # Track activity
-    monkey_activities = fill(0, length(inp))
-
-    # Run 20 rounds
-    for _ in 1:20
+function run_rounds!(monkeys, reducer=identity; rounds=20)
+    for _ in 1:rounds
         # Each monkey's round
-        for (idx, monkey) in enumerate(inp)
-            pos_target = inp[monkey.pos_target]
-            neg_target = inp[monkey.neg_target]
+        for (idx, monkey) in enumerate(monkeys)
+            pos_target = monkeys[monkey.pos_target]
+            neg_target = monkeys[monkey.neg_target]
             
             # Each item of a monkey
             while !isempty(monkey.items)
-                monkey_activities[idx] += 1
+                monkey.activities[] += 1
                 worry_level = apply_op(monkey.op, popfirst!(monkey.items))
-                new_level = div(worry_level, 3)
-                new_level % monkey.cond == 0 ? push!(pos_target.items, new_level) : push!(neg_target.items, new_level) end
-        end
-        # show_monkeys(inp)
-    end
-
-    sort!(monkey_activities)
-    reduce(*, last(monkey_activities, 2))
-end
-
-function day11_part2(inp)
-    inp = deepcopy(inp)
-    # Track activity
-    monkey_activities = fill(0, length(inp))
-    max_mod = prod(map(m -> m.cond, inp))
-
-    # Run 10_000 rounds
-    for _ in 1:10_000
-        # Each monkey's round
-        for (idx, monkey) in enumerate(inp)
-            pos_target = inp[monkey.pos_target]
-            neg_target = inp[monkey.neg_target]
-            
-            # Each item of a monkey
-            while !isempty(monkey.items)
-                monkey_activities[idx] += 1
-                worry_level = apply_op(monkey.op, popfirst!(monkey.items))
-                new_level = worry_level % max_mod
+                new_level = reducer(worry_level)
                 new_level % monkey.cond == 0 ? push!(pos_target.items, new_level) : push!(neg_target.items, new_level)
             end
         end
     end
-
-    sort!(monkey_activities)
-    reduce(*, last(monkey_activities, 2))
 end
+
+function day11_part1(inp)
+    inp = deepcopy(inp)
+
+    # Reducing lambda: Integer-division by 3
+    reducer(l) = div(l, 3)
+
+    # Apply 20 iterations
+    run_rounds!(inp, reducer; rounds=20)
+
+    # Retrieve result
+    sort!(inp; by=x->x.activities[])
+    inp[end].activities[] * inp[end-1].activities[]
+end
+
+
+function day11_part2(inp)
+    inp = deepcopy(inp)
+
+    # Reducing lambda: Maximum modulus wrap-around
+    max_mod = prod(m -> m.cond, inp)
+    reducer(l) = l % max_mod
+
+    # Apply 10_000 iterations
+    run_rounds!(inp, reducer; rounds=10_000)
+
+    # Retrieve result
+    sort!(inp; by=x->x.activities[])
+    inp[end].activities[] * inp[end-1].activities[]
+end
+
