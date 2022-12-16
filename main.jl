@@ -5,7 +5,7 @@ cfg = DotEnv.config()
 
 function main()
     st = ENV["session"]
-    @run_days 11 st
+    @run_days 12 st
 end
 
 main()
