@@ -29,6 +29,7 @@ function day13_part1(inp)
 end
 
 function day13_part2(inp)
+    # Cool hack from Julialang Zulip: Find insertion index by counting smaller elements
     packets = Iterators.flatten(inp)
     n1 = count(compare(x, [[2]]) < 0 for x in packets) + 1
     n2 = count(compare(x, [[6]]) < 0 for x in packets) + 2
