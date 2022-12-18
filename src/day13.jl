@@ -1,8 +1,6 @@
 function parse_day13(inp_str)
-end
-
-function day13_part1(inp)
-end
-
-function day13_part2(inp)
+    chunks = eachsplit(chomp(inp_str), "\n\n")
+    map(chunks) do chunk
+        eval.(Meta.parse.(split(chunk, '\n')))
+    end
 end
