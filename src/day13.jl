@@ -29,4 +29,8 @@ function day13_part1(inp)
 end
 
 function day13_part2(inp)
+    packets = Iterators.flatten(inp)
+    n1 = count(compare(x, [[2]]) < 0 for x in packets) + 1
+    n2 = count(compare(x, [[6]]) < 0 for x in packets) + 2
+    n1 * n2
 end
