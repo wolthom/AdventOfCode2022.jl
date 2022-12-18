@@ -34,74 +34,64 @@ function parse_day12(inp_str)
     (sidx, eidx, field_map)
 end
 
-function reachable_neighbors(field_map, idx) 
-    # Calculate neighbors as a NTuple{4, Union{Missing, CartesianIndex}}
-    cur_height = field_map[idx]
-    all_idxs = CartesianIndices(field_map)
-    candidates = (
-          CartesianIndex(idx[1]-1, idx[2]),
-          CartesianIndex(idx[1]+1, idx[2]),
-          CartesianIndex(idx[1], idx[2]-1),
-          CartesianIndex(idx[1], idx[2]+1),
-    )
-    map(candidates) do c
-        if !(c ∈ all_idxs) || field_map[c] - cur_height > 1
-            missing
-        else
-            c
-        end
+const deltas = CartesianIndex.((
+    (-1, 0),
+    (1, 0),
+    (0, -1),
+    (0, 1),
+))
+
+function count_steps(
+    m::AbstractMatrix{<:Integer},
+    steps::Matrix{<:Signed},
+    start::Vector{CartesianIndex{2}},
+    stop::CartesianIndex{2}
+)
+    # First initialize step-count of all fields to sentinel value 
+    fill!(steps, eltype(steps)(-1))
+
+    # Then initialize start positions to 0
+    for i in start
+        steps[i] = 0
     end
-end
 
-function min_dist(idx, target_idx, activate=true)
-    if activate
-        # Manhattan distance
-        diff = target_idx - idx
-        abs(diff[1]) + abs(diff[2])
-    else
-        0
-    end
-end
+    # Allocate buffer to store next fields
+    next = empty(start)
+    @inbounds while !isempty(start)
+        for index in start
+            current_steps = steps[index]
+            current_height = m[index]
+            # Iterate over all possible neighbors
+            for delta in deltas
+                new_index = delta + index
 
-function a_star_search(sidx, eidx, field_map)
-    # Set up search queue
-    search_queue = PriorityQueue{CartesianIndex, Int}()
-    enqueue!(search_queue, sidx => (0 + min_dist(sidx, eidx)))
+                # Check if candidate should be skipped
+                !checkbounds(Bool, m, new_index) && continue # Invalid index
+                (steps[new_index] != -1) && continue # Already visited
+                (m[new_index] - current_height) > 1 && continue # Unreachable
 
-    # History of visited fields
-    visited = Set{CartesianIndex}()
+                # Stop iteration if target is found
+                new_index == stop && return current_steps + 1
 
-    # A* search of path to end index
-    while !isempty(search_queue)
-        # Retrieve best candidate
-        (idx, heuristic) = dequeue_pair!(search_queue)
-        num_steps = heuristic - min_dist(idx, eidx)
-
-        # Track visited fields
-        push!(visited, idx)
-
-        # Stop search if final location is reached
-        idx == eidx && return num_steps
-
-        # Otherwise add neighbors of current node to queue
-        foreach(skipmissing(reachable_neighbors(field_map, idx))) do neighbor_idx
-            # Ensure only valid and new fields are added to the queue
-            if !haskey(search_queue, neighbor_idx) && !in(neighbor_idx, visited)
-                enqueue!(search_queue, neighbor_idx => (num_steps + 1 + min_dist(neighbor_idx, eidx)))
+                # Initialize values of next step count
+                steps[new_index] = current_steps + 1
+                push!(next, new_index)
             end
         end
+        # Empty start queue and alternate buffers
+        empty!(start)
+        (start, next) = (next, start)
     end
+    steps
 end
 
 function day12_part1((sidx, eidx, field_map))
-    a_star_search(sidx, eidx, field_map)
+    steps = Matrix{Int16}(undef, size(field_map))
+    count_steps(field_map, steps, [sidx], eidx)
 end
 
-function day12_part2((_, eidx, field_map))
-    candidates = findall(==(0), field_map)
 
-    minimum(candidates) do idx
-        res = a_star_search(idx, eidx, field_map)
-        !isnothing(res) ? res : typemax(Int)
-    end
+function day12_part2((sidx, eidx, field_map))
+    steps = Matrix{Int16}(undef, size(field_map))
+    count_steps(field_map, steps, findall(==(0), field_map), eidx)
 end
