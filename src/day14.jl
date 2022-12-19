@@ -79,12 +79,16 @@ function circ_shift!(queue)
 end
 
 function simulate_sand!(field_map, outlet)
+    # This approach utilizes two key optimizations:
+    #   1. Every time the sand moves, another unit is spawned and stored in a queue
+    #   2. If the head piece of sand move, all following units can just take the position of its predecessor (see circ_shift!)
+    #   3. If the head piece settles, the following pieces are actually moved until the first one that does not settle
     units = 0
 
     sand_queue = CartesianIndex{2}[]
     while true
         push!(sand_queue, outlet)
-        # Advance all sand units
+        # Advance all sand units if the current head unit settled
         idx = 1
         @inbounds while idx <= length(sand_queue)
             cur_pos = sand_queue[idx]
@@ -104,6 +108,7 @@ function simulate_sand!(field_map, outlet)
 
             # If the current sand unit moved, all following ones can just inherit the position
             if cur_pos != prev_pos
+                # Optimization: If the current head unit moved, the others can just follow the predecessor
                 circ_shift!(sand_queue)
                 sand_queue[1] = cur_pos
                 break
