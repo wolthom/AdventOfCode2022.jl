@@ -1,8 +1,9 @@
+using OffsetArrays
+
 const FieldEl = Union{Nothing, CartesianIndex{2}}
 
 function calculate_fieldsize(coords)
     min_idx, max_idx = (coords[1], coords[1])
-
     @inbounds for idx in 1:length(coords)-1
         next_el = coords[idx+1]
         isnothing(next_el) && continue
@@ -16,16 +17,13 @@ end
 function fill_map!(field_map, coords, min_idx)
     @inbounds for idx in 1:length(coords)-1
         cur_el, next_el = (coords[idx], coords[idx+1])
-
         # Skip segment gaps
         (isnothing(cur_el) || isnothing(next_el)) && continue
-        
         # Mark each index as filled
         foreach(min(cur_el, next_el):max(cur_el, next_el)) do idx
             field_map[idx] = 1
         end
     end
-
     # Add line for ground floor
     @view(field_map[end, begin:end]) .= 1
 end
@@ -44,14 +42,20 @@ function parse_day14(inp_str)
     end
 
     (min_idx, max_idx) = calculate_fieldsize(coords)
+    # Part 2:
+    #   Widen min / max in the x-axis direction by 200
+    #   Widen max in the y-axis direction by 2
+    min_idx = CartesianIndex(1, min_idx[2] - 200)
+    max_idx += CartesianIndex(2, 200)
 
-    # Expand map for part 2:
-    #   num_rows +2 ==> Add ground floor 
-    #   num_cols +200 ==> Expanded ground floor to prevent 'trickle-off'
-    field_map = fill!(Matrix{Int8}(undef, max_idx[1] + 2, max_idx[2]+200), 0)
+    # Allocate only the required map
+    field_map = fill!(Matrix{Int8}(undef, max_idx[1]-min_idx[1]+1, max_idx[2]-min_idx[2]+1), 0)
+    # Reset indices to match actual coordinates
+    field_map = OffsetArray(field_map, min_idx:max_idx)
+    # Set indices to desired range
     fill_map!(field_map, coords, min_idx)
  
-    (field_map, min_idx)
+    field_map
 end
 
 const steps = CartesianIndex.((
@@ -60,8 +64,8 @@ const steps = CartesianIndex.((
     (1, 1),
 ))
 
-function day14_part1((field_map, min_idx))
-    field_map = @view(field_map[begin:end-2, begin:end])
+function day14_part1(field_map)
+    field_map = OffsetArrays.Origin(field_map)(field_map[begin:end-2, begin:end])
     sand_outlet = CartesianIndex(0, 500)
     units = 0
 
@@ -97,7 +101,8 @@ function day14_part1((field_map, min_idx))
     units
 end
 
-function day14_part2((field_map, min_idx))
+function day14_part2(field_map)
+    field_map = copy(field_map)
     sand_outlet = CartesianIndex(0, 500)
     units = 0
 
