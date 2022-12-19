@@ -45,8 +45,8 @@ function parse_day14(inp_str)
     # Part 2:
     #   Widen min / max in the x-axis direction by 200
     #   Widen max in the y-axis direction by 2
-    min_idx = CartesianIndex(1, min_idx[2])
-    max_idx += CartesianIndex(2, 0)
+    min_idx = CartesianIndex(1, min_idx[2] - 200)
+    max_idx += CartesianIndex(2, 200)
 
     # Allocate only the required map
     field_map = fill!(Matrix{Int8}(undef, max_idx[1]-min_idx[1]+1, max_idx[2]-min_idx[2]+1), 0)
