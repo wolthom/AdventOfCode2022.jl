@@ -45,8 +45,8 @@ function parse_day14(inp_str)
     # Part 2:
     #   Widen min / max in the x-axis direction by 200
     #   Widen max in the y-axis direction by 2
-    min_idx = CartesianIndex(1, min_idx[2] - 200)
-    max_idx += CartesianIndex(2, 200)
+    min_idx = CartesianIndex(1, min_idx[2])
+    max_idx += CartesianIndex(2, 0)
 
     # Allocate only the required map
     field_map = fill!(Matrix{Int8}(undef, max_idx[1]-min_idx[1]+1, max_idx[2]-min_idx[2]+1), 0)
@@ -64,36 +64,57 @@ const steps = CartesianIndex.((
     (1, 1),
 ))
 
-function day14_part1(field_map)
-    field_map = OffsetArrays.Origin(field_map)(field_map[begin:end-2, begin:end])
-    sand_outlet = CartesianIndex(0, 500)
+function show_region(field_map, idx)
+    start_idx = CartesianIndex(max(1, idx[1]-10), idx[2]-10)
+    end_idx = CartesianIndex(min(size(field_map)[1], idx[1]+20), idx[2]+10)
+    println("~~~~~~~~ Idx: $idx ~~~~~~~~~")
+    display(@view(field_map[start_idx:end_idx]))
+    println()
+end
+
+function circ_shift!(queue)
+    @inbounds for idx in length(queue):-1:2
+        queue[idx] = queue[idx-1]
+    end
+end
+
+function simulate_sand!(field_map, outlet)
     units = 0
 
-    pos = sand_outlet
+    sand_queue = CartesianIndex{2}[]
     while true
-        prev = pos
-
-        # Try to advance unit of sand
-        for step in steps
-            new_pos = pos + step
-            # Finish simulation if the first unit of sand falls outside of the region
-            if !checkbounds(Bool, field_map, new_pos) 
-                @goto finish_label
+        push!(sand_queue, outlet)
+        # Advance all sand units
+        idx = 1
+        @inbounds while idx <= length(sand_queue)
+            cur_pos = sand_queue[idx]
+            prev_pos = cur_pos
+            for step in steps
+                new_pos = cur_pos + step
+                # Finish simulation if the first unit of sand falls outside of the region
+                if !checkbounds(Bool, field_map, new_pos) 
+                    @goto finish_label
+                end
+                # Skip already placed fields
+                field_map[new_pos] != 0 && continue
+                # Update current position
+                cur_pos = new_pos
+                break
             end
-            # Skip already placed fields
-            field_map[new_pos] != 0 && continue
-            # Take new position
-            pos = new_pos
-            break
-        end
-    
-        # Try advancing again if successful
-        prev != pos && continue
 
-        # Otherwise store sand location and spawn next unit of sand
-        field_map[pos] = 2
-        units += 1
-        pos = sand_outlet
+            # If the current sand unit moved, all following ones can just inherit the position
+            if cur_pos != prev_pos
+                circ_shift!(sand_queue)
+                sand_queue[1] = cur_pos
+                break
+            end
+
+            # Otherwise pop current hand and store location
+            pos = popfirst!(sand_queue)
+            pos == outlet && @goto finish_label
+            field_map[pos] = 2
+            units += 1
+        end
     end
 
     # Break out of simulation and return units of sand
@@ -101,44 +122,16 @@ function day14_part1(field_map)
     units
 end
 
+function day14_part1(field_map)
+    # Cut off floor
+    field_map = OffsetArrays.Origin(field_map)(field_map[begin:end-2, begin:end])
+    sand_outlet = CartesianIndex(0, 500)
+    simulate_sand!(field_map, sand_outlet)
+end
+
 function day14_part2(field_map)
+    # Duplicate input
     field_map = copy(field_map)
     sand_outlet = CartesianIndex(0, 500)
-    units = 0
-
-    pos = sand_outlet
-    while true
-        prev = pos
-
-        # Try to advance unit of sand
-        for step in steps
-            new_pos = pos + step
-            # Finish simulation if the first unit of sand falls outside of the region
-            if !checkbounds(Bool, field_map, new_pos) 
-                @show min_idx
-                @show size(field_map), pos, new_pos
-                @goto finish_label
-            end
-            # Skip already placed fields
-            field_map[new_pos] != 0 && continue
-            # Take new position
-            pos = new_pos
-            break
-        end
-    
-        # Try advancing again if successful
-        prev != pos && continue
-
-        # Check if outlet is blocked
-        units += 1
-        pos == sand_outlet && @goto finish_label
-
-        # Otherwise store sand location and spawn next unit of sand
-        field_map[pos] = 2
-        pos = sand_outlet
-    end
-
-    # Break out of simulation and return units of sand
-    @label finish_label
-    units
+    simulate_sand!(field_map, sand_outlet) + 1
 end
