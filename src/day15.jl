@@ -32,6 +32,11 @@ function range_comp(r1, r2)
     r1[end] > r2[end] && return false
 end
 
+function overlaps(r1, r2)
+    # Overlapping regions or touching endpoints
+    !isempty(intersect(r1, r2)) || r1[end] == r2[begin]
+end
+
 function fuse_ranges!(ranges)
     # Remove empty ranges and sort valid ones
     filter!(!isempty, ranges)
@@ -43,10 +48,10 @@ function fuse_ranges!(ranges)
     while idx < length(ranges)
         ctr += 1
         # Proceed to next element if current and next element do not overlap
-        isempty(intersect(ranges[idx], ranges[idx+1])) && (idx += 1; continue)
+        !overlaps(ranges[idx], ranges[idx+1]) && (idx += 1; continue)
 
         # Otherwise expand current element by next one and remove subsumed next element
-        new_range = ranges[idx][begin]:ranges[idx+1][end]
+        new_range = ranges[idx][begin]:max(ranges[idx][end], ranges[idx+1][end])
         ranges[idx] = new_range
         deleteat!(ranges, idx+1)
     end
@@ -73,5 +78,33 @@ function day15_part1(sensors)
     max_covered - beacons_in_line
 end
 
-function day15_part2(inp)
+function day15_part2(sensors)
+    x_range = 0:4_000_000
+    y_range = 0:4_000_000
+    ranges = UnitRange{Int64}[]
+    for y in y_range
+        empty!(ranges)
+        # Extract unique beacons and calculate covered positions
+        foreach(sensors) do sensor
+            push!(ranges, covered_range(sensor, y))
+        end
+
+        # Fuse overlapping ranges
+        fuse_ranges!(ranges)
+
+        # Entire x-area is covered by sensors
+        length(ranges) == 1 && x_range ⊆ only(ranges) && continue
+        
+        # Identify not covered x position
+        x_pos = if length(ranges) == 1 && only(ranges)[begin] > x_range[begin]
+            x_range[begin]
+        elseif length(ranges) == 1 && only(ranges)[end] < x_range[end]
+            x_range[end]
+        else
+            # Overlap must be after first covered segment due to sorting
+            ranges[1][end]+1
+        end
+
+        return x_pos * 4_000_000 + y
+    end
 end
