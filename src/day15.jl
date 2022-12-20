@@ -78,6 +78,7 @@ function day15_part1(sensors)
     max_covered - beacons_in_line
 end
 
+# TODO: Optimize part 2, there must be a much more efficient solution to this
 function day15_part2(sensors)
     x_range = 0:4_000_000
     y_range = 0:4_000_000
@@ -104,7 +105,6 @@ function day15_part2(sensors)
             # Overlap must be after first covered segment due to sorting
             ranges[1][end]+1
         end
-
         return x_pos * 4_000_000 + y
     end
 end
