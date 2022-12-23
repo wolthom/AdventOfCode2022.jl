@@ -40,7 +40,10 @@ end
 function fuse_ranges!(ranges)
     # Remove empty ranges and sort valid ones
     filter!(!isempty, ranges)
-    sort!(ranges; lt=range_comp)
+
+    # TODO: Figure out why sort! with the standard lt is extremely inefficient
+    #       Also: This does not appear to be the case when benchmarked by itself but only in a larger context
+    sort!(ranges; lt=range_comp) 
 
     # Iteratively fuse overlapping ranges
     ctr = 1
@@ -78,7 +81,10 @@ function day15_part1(sensors)
     max_covered - beacons_in_line
 end
 
-# TODO: Optimize part 2, there must be a much more efficient solution to this
+# TODO: Optimize part 2
+#         Idea 1: Use IntervalArithmetic.jl to continuously remove covered areas from the search space
+#                 This would require rotating the coordinate space by 45°, widening the search space and then shrinking it again
+#         Idea 2: Walk the immediate neighborhood of each rectangle until a point is found that is not part of any rectangles
 function day15_part2(sensors)
     x_range = 0:4_000_000
     y_range = 0:4_000_000
