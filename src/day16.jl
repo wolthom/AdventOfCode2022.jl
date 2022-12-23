@@ -108,5 +108,35 @@ function day16_part1(valves)
 end
 
 function day16_part2(valves)
+    # Calculate all pair-wise distances
+    dist_mat = floyd_warshall(valves)
+
+    # Store indices of relevant valves (i.e. flow rate > 0) to consider
+    valve_names = map(x->x.name, valves)
+    search_idxs = map(Iterators.filter(x -> x.rate > 0, valves)) do valve
+        idx = searchsortedfirst(valve_names, valve.name)
+        (idx, valve.rate)
+    end 
+
+    # Calculate the values of all possible states
+    cache = Dict{Int64, Int64}()
+    start_state = CaveState(26, 0x0, 0, 1)
+    calculate_pressures!(cache, start_state, search_idxs, dist_mat)
+
+    # Determine best combination
+    results = pairs(cache) |> collect
+    best_res = typemin(Int64)
+    @inbounds for i in 1:length(results)
+        @inbounds for j in 1:length(results)
+            (s1, r1) = results[i]
+            (s2, r2) = results[j]
+
+            # Skip overlapping states
+            (s1 & s2) != 0 && continue
+            
+            best_res = max(best_res, r1 + r2) 
+        end
+    end
+    best_res
 end
 
