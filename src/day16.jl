@@ -55,10 +55,58 @@ function floyd_warshall(valves)
 end
 
 
-function day16_part1(valves)
-    dist_mat = floyd_warshall(valves)
+struct CaveState
+    time::Int64
+    active::UInt64
+    total_flow::Int64
+    prev::Int64
 end
 
-function day16_part2(inp)
+function is_active(state, idx)
+    (state.active & (1 << idx)) != 0x0
+end
+
+function calculate_pressures!(cache, state, search_idxs, dist_mat)
+    # Update current state if it's an improvement
+    cache[state.active] = max(get(cache, state.active, 0), state.total_flow)
+
+    # Otherwise iterate over all search_idxs and recursively fill cache
+    @inbounds for (idx, rate) in search_idxs
+        new_time = state.time - dist_mat[state.prev, idx] - 1
+
+        # Skip already active valves or candidates with too little time
+        (is_active(state, idx) || new_time <= 0) && continue
+
+        # Recurse into next state
+        new_active = state.active | (1 << idx)
+        new_flow = state.total_flow + new_time * rate
+        new_state = CaveState(new_time, new_active, new_flow, idx)
+        calculate_pressures!(cache, new_state, search_idxs, dist_mat)
+    end
+
+    return cache
+end
+
+
+function day16_part1(valves)
+    # Calculate all pair-wise distances
+    dist_mat = floyd_warshall(valves)
+
+    # Store indices of relevant valves (i.e. flow rate > 0) to consider
+    valve_names = map(x->x.name, valves)
+    search_idxs = map(Iterators.filter(x -> x.rate > 0, valves)) do valve
+        idx = searchsortedfirst(valve_names, valve.name)
+        (idx, valve.rate)
+    end 
+
+    # Calculate the values of all possible states
+    cache = Dict{Int64, Int64}()
+    start_state = CaveState(30, 0x0, 0, 1)
+    calculate_pressures!(cache, start_state, search_idxs, dist_mat)
+
+    maximum(values(cache))
+end
+
+function day16_part2(valves)
 end
 
