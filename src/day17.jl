@@ -2,6 +2,7 @@ const SPAWN_X = 3
 const FIELD_WIDTH = 7
 const NUM_ROCKS_P1 = 2022
 const NUM_ROCKS_P2 = 1_000_000_000_000
+
 # Collection of all shapes in "local" coordinates
 # (0, 0) -> Lower left point
 # Shorter shapes are filled with a duplicated coordinate for type stability
@@ -13,6 +14,7 @@ const SHAPES = (
     ((1, 1), (2, 1), (1, 2), (2, 2), (1, 1)),
 )
 
+# TODO: This could be improved by storing a Vec{UInt8} as a row-wise bitmap instead of an actual matrix
 mutable struct MapState
     max_coords::Vector{Int}
     spawn_height::Int
