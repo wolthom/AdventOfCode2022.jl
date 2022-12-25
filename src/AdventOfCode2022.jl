@@ -56,4 +56,32 @@ export parse_day15, day15_part1, day15_part2
 include("./day16.jl")
 export parse_day16, day16_part1, day16_part2
 
+include("./day17.jl")
+export parse_day17, day17_part1, day17_part2
+
+include("./day18.jl")
+export parse_day18, day18_part1, day18_part2
+
+include("./day19.jl")
+export parse_day19, day19_part1, day19_part2
+
+include("./day20.jl")
+export parse_day20, day20_part1, day20_part2
+
+include("./day21.jl")
+export parse_day21, day21_part1, day21_part2
+
+include("./day22.jl")
+export parse_day22, day22_part1, day22_part2
+
+include("./day23.jl")
+export parse_day23, day23_part1, day23_part2
+
+include("./day24.jl")
+export parse_day24, day24_part1, day24_part2
+
+include("./day25.jl")
+export parse_day25, day25_part1, day25_part2
+
+
 end # module AdventOfCode2022
