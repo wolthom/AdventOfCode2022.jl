@@ -11,12 +11,6 @@ const hand_map = (
 )
 
 
-"""
-    parse_day2(inp_str)
-
-Returns a vector of matches played.
-Each match is represented as an tuple of `Hand` enums.
-"""
 function parse_day2(inp_str)
     matches = eachsplit(inp_str, "\n")
     map(matches) do match
@@ -31,7 +25,6 @@ function day2_part1(inp)
 end
 
 
-# TODO: Implement (Char, Char) -> Game mapping according to Part 2
 function day2_part2(inp)
     sum(inp) do match
         hand = hand_map[match[1]][match[2]]
