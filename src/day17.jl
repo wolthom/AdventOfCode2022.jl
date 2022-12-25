@@ -110,6 +110,7 @@ function get_cycle_state(state, rock_idx)
     (shape_idx, current_idx, relative_heights)
 end
 
+# TRICKY PART: Cyclicity can be determined based on currents idx, shape idx, and *relative heights in each column*
 const CycleState = Tuple{Int, Int, NTuple{7, Int}}
 
 function day17_part2(state)

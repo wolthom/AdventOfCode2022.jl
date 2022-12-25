@@ -23,6 +23,7 @@ function parse_day16(inp_str)
     sort!(out; by=el->el.name)
 end
 
+# TRICKY PART: Instead of BFS / DIJKSTRA for each pair-wise distance use `floyd_warshall`
 function floyd_warshall(valves)
     # Set up connection matrix 
     valve_names = map(x->x.name, valves)
@@ -55,6 +56,9 @@ function floyd_warshall(valves)
 end
 
 
+# TRICKY PART: `Flow` does not need to be simulated, instead directly calculate the released
+#               pressure because it will have constant output for the remaining time.
+#               This value is then passed into the recursive calls
 struct CaveState
     time::Int64
     active::UInt64
