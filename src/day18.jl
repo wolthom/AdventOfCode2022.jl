@@ -22,13 +22,17 @@ function parse_day18(inp_str)
 end
 
 function sides(cube, cubes)
+    6 - sum(NEIGHBOR_DELTAS) do delta
+        (cube .+ delta) ∈ cubes
+    end
 end
 
 function day18_part1(cubes)
     exposed_sides = 0
     for cube in cubes
-
+        exposed_sides += sides(cube, cubes)
     end
+    exposed_sides
 end
 
 function day18_part2(inp)
