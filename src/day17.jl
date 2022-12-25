@@ -1,6 +1,7 @@
 const SPAWN_X = 3
 const FIELD_WIDTH = 7
-const NUM_ITERATIONS = 2023
+const NUM_ROCKS_P1 = 2022
+const NUM_ROCKS_P2 = 1_000_000_000_000
 # Collection of all shapes in "local" coordinates
 # (0, 0) -> Lower left point
 # Shorter shapes are filled with a duplicated coordinate for type stability
@@ -22,7 +23,7 @@ end
 
 function parse_day17(inp_str)
     # Maximum number of vertically stacked I bars
-    max_height = 4 * NUM_ITERATIONS + 4
+    max_height = 4 * NUM_ROCKS_P1 + 4
     field = falses(max_height, FIELD_WIDTH)
     state = MapState(zeros(FIELD_WIDTH), 4, 1, collect(chomp(inp_str)), field)
     state
@@ -77,6 +78,10 @@ function move_rock!(rock, state)
     end
 end
 
+function max_height(max_coords)
+    maximum(idx -> idx[1], max_coords)
+end
+
 function day17_part1(state)
     state = deepcopy(state)
     for (i, shape) in enumerate(Iterators.cycle(SHAPES))
@@ -86,10 +91,63 @@ function day17_part1(state)
         
         # Make rock fall into place
         move_rock!(rock, state)
-        i == 2022 && break
+        i == NUM_ROCKS_P1 && break
     end
-    maximum(idx -> idx[1], state.max_coords)
+    max_height(state.max_coords)
 end
 
-function day17_part2(inp)
+function calculate_relative_heights(max_coords)
+    max_height = maximum(idx -> idx[1], max_coords)
+    ntuple(Val(7)) do idx
+        max_height - max_coords[idx]
+    end
+end
+
+function get_cycle_state(state, rock_idx)
+    shape_idx = mod1(rock_idx, length(SHAPES))
+    current_idx = state.current_idx
+    relative_heights = calculate_relative_heights(state.max_coords)
+    (shape_idx, current_idx, relative_heights)
+end
+
+const CycleState = Tuple{Int, Int, NTuple{7, Int}}
+
+function day17_part2(state)
+    state = deepcopy(state)
+    cache = Dict{CycleState, Tuple{Int, Int}}()
+
+    # Height gain derived from not-run cycles
+    cycle_add = 0
+    # Number of iterations to actually run
+    max_i = NUM_ROCKS_P2
+
+    for (i, shape) in enumerate(Iterators.cycle(SHAPES))
+        # Spawn new rock
+        start_coord = (state.spawn_height-1, SPAWN_X-1)
+        rock = shift_rock(shape, start_coord)
+        
+        # Make rock fall into place
+        move_rock!(rock, state)
+        i == max_i && break
+
+        # Skip caching after cyclicity was found
+        max_i != NUM_ROCKS_P2 && continue
+
+        # Cache current rock count and height based on cyclicity state
+        cycle_state = get_cycle_state(state, i)
+        if haskey(cache, cycle_state)
+            (prev_i, prev_max_height) = cache[cycle_state]
+            cur_max_height = max_height(state.max_coords)
+
+            # Calculate how many cycles to skip / how many iterations are missing
+            num_cycles, remaining_iterations = divrem((NUM_ROCKS_P2 - i), (i - prev_i))
+            max_i = i + remaining_iterations
+
+            # Store height added during full cycles
+            cycle_add = num_cycles * (cur_max_height - prev_max_height)
+            continue
+        end
+        cache[cycle_state] = (i, max_height(state.max_coords))
+    end
+    max_height(state.max_coords) + cycle_add
 end
