@@ -25,9 +25,9 @@ function parse_day18(inp_str)
 end
 
 function l1_norm(cube1, cube2)
-    abs(cube1[1] - cube2[1]) + 
-    abs(cube1[2] - cube2[2]) + 
-    abs(cube1[3] - cube2[3])
+    abs(cube1.x - cube2.x) + 
+    abs(cube1.y - cube2.y) + 
+    abs(cube1.z - cube2.z)
 end
 
 function mark_surfaces!(cube1, cube2)
@@ -36,13 +36,15 @@ function mark_surfaces!(cube1, cube2)
               cube1.y - cube2.y,
               cube1.z - cube2.z,
     )
-    # Mark bit for covered field
-    (_, offset1) = CUBE_COVER_MASKS[findfirst(delta)]
-    cube1.covered[] = cube1.covered[] | (1 << offset1)
+    # Mark bit for covered field of cube 1
+    idx = findfirst(==(delta), CUBE_COVER_MASKS)
+    offset = idx - 1
+    cube1.covered[] = cube1.covered[] | (0x1 << offset)
 
-    # Mark bit for covered field
-    (_, offset2) = CUBE_COVER_MASKS[findfirst((-1) .* delta)]
-    cube2.covered[] = cube2.covered[] | (1 << offset2)
+    # Mark bit for covered field of cube 2
+    idx = findfirst(==((-1) .* delta), CUBE_COVER_MASKS)
+    offset = idx - 1
+    cube2.covered[] = cube2.covered[] | (0x1 << offset)
 end
 
 function day18_part1(cubes)
@@ -55,6 +57,9 @@ function day18_part1(cubes)
             l1_norm(cube1, cube2) != 1 && continue
             mark_surfaces!(cube1, cube2)
         end
+    end
+    length(cubes) * 6 - sum(cubes) do cube
+        count_ones(cube.covered[])
     end
 end
 
