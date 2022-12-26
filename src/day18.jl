@@ -1,6 +1,6 @@
 using OffsetArrays
 
-@enum CubeType Unknown Air Obsidian
+@enum CubeType Unknown Air Rock
 
 const NEIGHBOR_DELTAS = CartesianIndex.((
     (1, 0, 0),
@@ -37,7 +37,7 @@ function parse_day18(inp_str)
     volume = fill(Unknown, Tuple(max_coord - min_coord) .+ (1, 1, 1))
     volume = OffsetArray(volume, min_coord:max_coord)
     for cube in cubes
-        volume[cube] = Obsidian
+        volume[cube] = Rock
     end
 
     (cubes, volume)
@@ -46,7 +46,7 @@ end
 function sides(cube, volume)
     6 - sum(NEIGHBOR_DELTAS) do delta
         idx = (cube + delta)
-        volume[idx] == Obsidian
+        volume[idx] == Rock
     end
 end
 
