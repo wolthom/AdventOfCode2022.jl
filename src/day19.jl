@@ -50,6 +50,7 @@ function can_build(resources, cost)
     all(resources .>= cost)
 end
 
+# TODO: Evaluate whether caching can prune further branches
 function run_simulation!(max_geodes, state, bp)
     # Update maximum number of geodes if current run has more than before
     if state.resources[Int(Geode)] > max_geodes[bp]
@@ -58,6 +59,7 @@ function run_simulation!(max_geodes, state, bp)
 
     # Stop simulation if time is over
     state.mins <= 0 && return
+    # TODO: Improve heuristic for when this branch should terminated
     # Cancel current run if maximum achievable number of geodes can't surpass current maximum
     if max_achievable(state) <= max_geodes[bp]
         return
@@ -68,16 +70,12 @@ function run_simulation!(max_geodes, state, bp)
         robot = Int(robot)
         # Skip if it cannot be built
         !can_build(state.resources, bp.costs[robot]) && continue
-        # Skip if production exceeds Geode-robot cost
-        if (state.robots[Int(Ore)] > bp.costs[Int(Geode)][Int(Ore)]) &&
-            (state.robots[Int(Obsidian)] > bp.costs[Int(Geode)][Int(Obsidian)])
-            continue
-        end
+        # TODO: Skip robots that don't need to be built anymore
 
         # Build robot and subtract cost / generate resources
         new_robots = state.robots
         @reset new_robots[robot] += 1
-        new_resources = state.resources .- bp.costs[robot] .+ new_robots
+        new_resources = state.resources .- bp.costs[robot] .+ state.robots
         new_state = MiningState(new_resources, new_robots, state.mins-1)
 
         # Run new simulation and potentially update max geodes
