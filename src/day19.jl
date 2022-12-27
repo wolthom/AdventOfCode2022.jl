@@ -89,6 +89,7 @@ function run_simulation!(max_geodes, state, bp)
     run_simulation!(max_geodes, state, bp)
 end
 
+# TODO: Figure out what allocates such a large amount of memory (for 31 blueprints -> 4e10 allocations --> Likely a hot loop)
 function day19_part1(blueprints)
     # Store maximum number of identified geodes
     max_geodes = Dict{BluePrint, Int}()
