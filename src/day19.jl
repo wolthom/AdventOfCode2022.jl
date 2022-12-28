@@ -73,44 +73,81 @@ function still_required(robots, costs, robot)
     false
 end
 
-function is_relevant(move_idx, state, costs, max_costs)
-    # Check if time remains
-    state.mins <= 0 && return false
 
+function upper_bound(state, costs)
+    # Extract locally relevant variables
+    cost = costs[Int(Geode)][Int(Obsidian)]
+    geodes = state.resources[Int(Geode)]
+    obsidian = state.resources[Int(Obsidian)]
+    rate = state.robots[Int(Obsidian)]
 
-    # Checks for robot-building moves specifically
-    if move_idx != 5
-        # Check if robot is still required
-        state.robots[move_idx] >= max_costs[move_idx] && return false
-       
-        # Check if sufficient resources for building robot are available
-        !all(state.resources .>= costs[move_idx]) && return false
+    reducer((geodes, obsidian, rate), mins) = begin
+        # Build geode robots whenever enough obsidian is available
+        if obsidian >= cost
+            (geodes + mins, obsidian + rate - cost, rate)
+        # Assume obsidian robots can always be produced
+        else
+            (geodes, obsidian + rate, rate + 1)
+        end
     end
     
+    res = reduce(reducer, state.mins:-1:0; init=(geodes, obsidian, rate))
+    res[1]
+end
+
+function is_relevant(move_idx, state, costs, max_costs, max_geodes)
+    return true
+    # Check if robot is still required
+    state.robots[move_idx] >= max_costs[move_idx] && return false
+       
     # Check if move can actually outperform current max
+    # Smart approximation of the upper bound:
+    #   Assume infinite ore and clay, but not obsidian
+    #   Calculate how many Geodes will be possible this way
+    #   See: https://github.com/Crazytieguy/advent-of-code/blob/master/2022/src/bin/day19/main.rs#L187-L210
+    upper_bound(state, costs) <= max_geodes && return false
+
+    # Otherwise move is relevant
     true
 end
 
-# TODO: Evaluate whether caching can prune further branches
+function calculate_next_state(move_idx, state, costs)
+    out::Union{Nothing, MiningState} = nothing
+
+    resource_eltype = eltype(state.resources)
+    rates = state.robots
+    robot_costs = costs[move_idx]
+    
+    required_mins = resource_eltype(0)
+    for idx in 1:3 # Geodes are never a resource
+        cost = robot_costs[idx]
+        rate = rates[idx]
+
+        ((cost != 0) && (rate == 0)) && return out
+        rate == 0 && continue
+
+        required_mins = max(required_mins, ceil(resource_eltype, cost / rate))
+    end
+    required_mins > state.mins && return out
+
+    new_resources = state.resources .+ required_mins .* rates
+    new_robots = state.robots
+    @reset new_robots[move_idx] = new_robots[move_idx] + resource_eltype(1)
+   
+    out = MiningState(new_resources, new_robots, state.mins - required_mins)
+
+    out
+end
+
 function run_simulation!(start_state, bp)
     max_geodes = 0
     # Debug data to track
     max_len = 0
     num_states = 0
 
-    mins = 24
-    moves = (
-        (1, 0, 0, 0), # Add an ore robot
-        (0, 1, 0, 0), # Add a clay robot
-        (0, 0, 1, 0), # Add geode robot
-        (0, 0, 0, 1), # Add an obsidian robot
-        (0, 0, 0, 0), # Wait
-    )
     max_costs = NTuple{4, Int16}(maximum(x->x[i], bp.costs) for i in 1:4)
     @reset max_costs[4] = typemax(Int16) # There is no such thing as too many geodes
 
-    # With only one state, this performs BFS, DFS would probably be preferable
-    # TODO: Emulate DFS by keeping different stacks for each amount of minutes remaining
     states = MiningState[] 
     push!(states, start_state)
     # Keep iterating while relevant branches exist
@@ -122,19 +159,17 @@ function run_simulation!(start_state, bp)
         max_len = max(max_len, length(states))
 
         # Add branches to explore
-        for (move_idx, move) in enumerate(moves)
-            # Skip invalid or irrelevant moves from current state
-            !is_relevant(move_idx, state, bp.costs, max_costs) && continue
+        # TODO: Optimize by 'skipping ahead' for moves
+        #       I.e. calculate when this move may be taken and directly calculate that state
+        for move_idx in 1:4 
+            next_state = calculate_next_state(move_idx, state, bp.costs)
+            # Skip if desired state is unreachable
+            isnothing(next_state) && continue
 
-            new_resources = if move_idx != 5 
-                state.resources .+ state.robots .- bp.costs[move_idx]
-            else
-                state.resources .+ state.robots
-            end
+            # Skip irrelevant moves
+            !is_relevant(move_idx, next_state, bp.costs, max_costs, max_geodes) && continue
 
-            new_robots = state.robots .+ move
-            new_state = MiningState(new_resources, new_robots, state.mins-1)
-            push!(states, new_state)
+            push!(states, next_state)
         end
     end
 
