@@ -43,6 +43,7 @@ function parse_day19(inp_str)
     end |> collect
 end
 
+# TODO: Debug upper bound
 function upper_bound(state, costs)
     cost = costs[Int(Geode)][Int(Obsidian)]
     geodes = state.geodes
@@ -81,6 +82,7 @@ function is_relevant(move_idx, state, costs, max_costs, max_geodes)
     true
 end
 
+# TODO: Fix this
 function calculate_next_state(move_idx, state, costs)
     out::Union{Nothing, MiningState} = nothing
 
@@ -97,36 +99,38 @@ function calculate_next_state(move_idx, state, costs)
     # Find timepoint when sufficient resources are available
     new_resources = state.resources
     new_robots = state.robots
-    steps = resource_eltype(0)
+
+    rem = state.mins - 1
     while any(new_resources .< robot_costs)
         new_resources = new_resources .+ rates
-        steps += resource_eltype(1)
+        rem -= 1
     end
 
     # Bail if timepoint is after end
-    steps >= state.mins && return out
+    rem < 0 && return out
 
     new_resources = new_resources .- robot_costs
 
     # Whenever a new geode robot is manufactured, directly add its entire production
     if move_idx == Int(Geode)
-        geodes += (state.mins - steps)
+        geodes += rem
     else
         @reset new_robots[move_idx] = new_robots[move_idx] + resource_eltype(1)
     end
    
-    out = MiningState(new_resources .+ rates, new_robots, geodes, state.mins - steps - 1)
+    out = MiningState(new_resources .+ rates, new_robots, geodes, rem)
 
     out
 end
 
 function run_simulation!(start_state, bp)
     max_geodes = 0
+
     # Debug data to track
     max_len = 0
     num_states = 0
 
-    max_costs = NTuple{3, Int16}(maximum(x->x[i], bp.costs) for i in 1:3)
+    max_costs = NTuple{3, Int16}(maximum(x->x[i], bp.costs) for i in length(start_state.resources))
 
     states = MiningState[] 
     push!(states, start_state)
@@ -135,12 +139,14 @@ function run_simulation!(start_state, bp)
         # Retrieve current branch to explore
         state = pop!(states)
         num_states += 1
+        if state.geodes >= 9
+            @show state
+        end
+        # Update Debug data
         max_geodes = max(max_geodes, state.geodes)
         max_len = max(max_len, length(states))
 
         # Add branches to explore
-        # TODO: Optimize by 'skipping ahead' for moves
-        #       I.e. calculate when this move may be taken and directly calculate that state
         for move_idx in Int.((Ore, Clay, Obsidian, Geode))
             next_state = calculate_next_state(move_idx, state, bp.costs)
             # Skip if desired state is unreachable
@@ -153,12 +159,12 @@ function run_simulation!(start_state, bp)
         end
     end
 
+    # Report Debug data
     @show max_len, num_states
 
     max_geodes
 end
 
-# TODO: Figure out what allocates such a large amount of memory (for 31 blueprints -> 4e10 allocations --> Likely a hot loop)
 function day19_part1(blueprints)
     # Store maximum number of identified geodes
     max_geodes = Dict{BluePrint, Int}()
