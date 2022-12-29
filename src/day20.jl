@@ -2,10 +2,6 @@ function parse_day20(inp_str)
     map(Base.Fix1(parse, Int), eachsplit(chomp(inp_str), '\n'))
 end
 
-function is_debug()
-    false
-end
-
 function calculate_new_position(pos, prev_idx, new_idx)
     new_pos = pos
 
@@ -38,10 +34,6 @@ function apply_shifts!(nums, positions; num_shifts=1)
     len = length(nums)
     for _ in 1:num_shifts
         for (i, pos) in enumerate(positions)
-            is_debug() && println("~" ^ 50 * " \t Iteration: $i")
-
-            is_debug() && (tmp = hcat(positions, nums); display(tmp))
-
             # Calculate new index for number
             num = nums[pos]
             num == 0 && continue # No movement occurs
@@ -51,16 +43,13 @@ function apply_shifts!(nums, positions; num_shifts=1)
             deleteat!(nums, pos)
             insert!(nums, new_idx, num)
             
-            is_debug() && @show pos, num, new_idx
             # Update affected positions 
             # is_debug() && (display(hcat(positions, calculate_new_position.(positions, Ref(pos), Ref(new_idx)))))
             @. positions = calculate_new_position(positions, pos, new_idx)
             positions[i] = new_idx
-
-            is_debug() && println()
         end
     end
-    is_debug() && display(nums)
+    nums
 end
 
 
@@ -73,6 +62,7 @@ function day20_part1(nums)
     apply_shifts!(nums, positions)
 
     idx = findfirst(==(0), nums)
+    !isnothing(idx) && return 0
     target_offsets = [1000, 2000, 3000]
 
     sum(target_offsets) do offset
@@ -90,6 +80,7 @@ function day20_part2(nums)
     apply_shifts!(nums, positions; num_shifts=10)
 
     idx = findfirst(==(0), nums)
+    !isnothing(idx) && return 0
     target_offsets = [1000, 2000, 3000]
 
     sum(target_offsets) do offset
