@@ -208,7 +208,7 @@ function day19_part2(blueprints)
         # @show max_geodes[blueprint]
     end
 
-    sum(max_geodes) do (_, geodes)
+    prod(max_geodes) do (_, geodes)
         geodes
     end
 end
