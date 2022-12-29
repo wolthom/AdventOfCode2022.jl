@@ -140,13 +140,10 @@ end
 function run_simulation!(start_state, bp)
     max_geodes = 0
 
-    # Debug data to track
-    max_len = 0
-    num_states = 0
-
     max_costs = NTuple{3, Int16}(maximum(x->x[i], bp.costs) for i in 1:length(start_state.resources))
 
-    # Emulate depth-first search by keeping different remaining times in separate stacks
+    # Depth-first search by keeping different remaining times in separate stacks
+    #   Pop preferably from the stack with the lowest number of minutes (see inside while loop)
     states = [ MiningState[] for _ in 1:start_state.mins ]
 
     push!(states[start_state.mins], start_state)
@@ -157,10 +154,8 @@ function run_simulation!(start_state, bp)
 
         # Retrieve current branch to explore (preferring branches with a smaller number of remaining minutes)
         state = pop!(states[idx])
-        num_states += 1
         # Update Debug data
         max_geodes = max(max_geodes, state.geodes)
-        max_len = max(max_len, length(states))
 
         # Add branches to explore
         for move_idx in Int.((Ore, Clay, Obsidian, Geode))
@@ -175,9 +170,6 @@ function run_simulation!(start_state, bp)
         end
     end
 
-    # Report Debug data
-    # @show max_len, num_states
-
     max_geodes
 end
 
@@ -185,11 +177,9 @@ function day19_part1(blueprints)
     # Store maximum number of identified geodes
     max_geodes = Dict{BluePrint, Int}()
     for blueprint in blueprints
-        # @show blueprint
         max_geodes[blueprint] = typemin(Int)
         state = MiningState() 
         max_geodes[blueprint] = run_simulation!(state, blueprint)
-        # @show max_geodes[blueprint]
     end
 
     sum(max_geodes) do (blueprint, geodes)
@@ -201,11 +191,9 @@ function day19_part2(blueprints)
     # Store maximum number of identified geodes
     max_geodes = Dict{BluePrint, Int}()
     for blueprint in blueprints[1:3]
-        # @show blueprint
         max_geodes[blueprint] = typemin(Int)
         state = MiningState(32) 
         max_geodes[blueprint] = run_simulation!(state, blueprint)
-        # @show max_geodes[blueprint]
     end
 
     prod(max_geodes) do (_, geodes)
