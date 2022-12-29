@@ -67,7 +67,7 @@ end
 
 function is_relevant(move_idx, state, costs, max_costs, max_geodes)
     # Check if robot is still required
-    move_idx != 4 && state.robots[move_idx] >= max_costs[move_idx] && return false
+    ((move_idx != 4) && (state.robots[move_idx] > max_costs[move_idx])) && return false
 
     return true
        
@@ -100,15 +100,22 @@ function calculate_next_state(move_idx, state, costs)
     new_resources = state.resources
     new_robots = state.robots
 
-    rem = state.mins - 1
+    rem = state.mins
+    # 1. Check if robot can be produced at current times
+    # 2. Calculate new resources
+    # 3. Update time and repeat
     while any(new_resources .< robot_costs)
         new_resources = new_resources .+ rates
         rem -= 1
+        # @show rates, new_resources, rem
+
     end
 
-    # Bail if timepoint is after end
-    rem < 0 && return out
+    # Bail if robot will not be available early enough to produce resources
+    rem <= 1 && return out
 
+    # Build robot and advance time
+    rem -= 1
     new_resources = new_resources .- robot_costs
 
     # Whenever a new geode robot is manufactured, directly add its entire production
@@ -130,18 +137,20 @@ function run_simulation!(start_state, bp)
     max_len = 0
     num_states = 0
 
-    max_costs = NTuple{3, Int16}(maximum(x->x[i], bp.costs) for i in length(start_state.resources))
+    max_costs = NTuple{3, Int16}(maximum(x->x[i], bp.costs) for i in 1:length(start_state.resources))
 
-    states = MiningState[] 
-    push!(states, start_state)
+    # Emulate depth-first search by keeping different remaining times in separate stacks
+    states = [ MiningState[] for _ in 1:24 ]
+
+    push!(states[start_state.mins], start_state)
     # Keep iterating while relevant branches exist
-    while length(states) > 0
-        # Retrieve current branch to explore
-        state = pop!(states)
+    pred(s) = length(s) > 0
+    while any(pred, states)
+        idx = findfirst(pred, states)
+
+        # Retrieve current branch to explore (preferring branches with a smaller number of remaining minutes)
+        state = pop!(states[idx])
         num_states += 1
-        if state.geodes >= 9
-            @show state
-        end
         # Update Debug data
         max_geodes = max(max_geodes, state.geodes)
         max_len = max(max_len, length(states))
@@ -155,12 +164,12 @@ function run_simulation!(start_state, bp)
             # Skip irrelevant moves
             !is_relevant(move_idx, next_state, bp.costs, max_costs, max_geodes) && continue
 
-            push!(states, next_state)
+            push!(states[next_state.mins], next_state)
         end
     end
 
     # Report Debug data
-    @show max_len, num_states
+    # @show max_len, num_states
 
     max_geodes
 end
@@ -169,11 +178,11 @@ function day19_part1(blueprints)
     # Store maximum number of identified geodes
     max_geodes = Dict{BluePrint, Int}()
     for blueprint in blueprints
-        @show blueprint
+        # @show blueprint
         max_geodes[blueprint] = typemin(Int)
         state = MiningState() 
         max_geodes[blueprint] = run_simulation!(state, blueprint)
-        @show max_geodes[blueprint]
+        # @show max_geodes[blueprint]
     end
 
     sum(max_geodes) do (blueprint, geodes)
