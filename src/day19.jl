@@ -27,6 +27,15 @@ function MiningState()
     )
 end
 
+function MiningState(mins)
+    MiningState(
+        (0, 0, 0),
+        (1, 0, 0), # 1 Ore robot at the beginning
+        0, 
+        mins,
+    )
+end
+
 function parse_day19(inp_str)
     parse_match(m) = parse(Int16, m[1])
     map(eachsplit(chomp(inp_str), '\n')) do line
@@ -69,8 +78,6 @@ function is_relevant(move_idx, state, costs, max_costs, max_geodes)
     # Check if robot is still required
     ((move_idx != 4) && (state.robots[move_idx] > max_costs[move_idx])) && return false
 
-    return true
-       
     # Check if move can actually outperform current max
     # Smart approximation of the upper bound:
     #   Assume infinite ore and clay, but not obsidian
@@ -140,7 +147,7 @@ function run_simulation!(start_state, bp)
     max_costs = NTuple{3, Int16}(maximum(x->x[i], bp.costs) for i in 1:length(start_state.resources))
 
     # Emulate depth-first search by keeping different remaining times in separate stacks
-    states = [ MiningState[] for _ in 1:24 ]
+    states = [ MiningState[] for _ in 1:start_state.mins ]
 
     push!(states[start_state.mins], start_state)
     # Keep iterating while relevant branches exist
@@ -190,5 +197,18 @@ function day19_part1(blueprints)
     end
 end
 
-function day19_part2(inp)
+function day19_part2(blueprints)
+    # Store maximum number of identified geodes
+    max_geodes = Dict{BluePrint, Int}()
+    for blueprint in blueprints[1:3]
+        # @show blueprint
+        max_geodes[blueprint] = typemin(Int)
+        state = MiningState(32) 
+        max_geodes[blueprint] = run_simulation!(state, blueprint)
+        # @show max_geodes[blueprint]
+    end
+
+    sum(max_geodes) do (_, geodes)
+        geodes
+    end
 end
