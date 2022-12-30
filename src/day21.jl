@@ -47,9 +47,10 @@ function parse_day21(inp_str)
 end
 
 function get_node(tree::Tree, node_name)
-    pred(node) = node.name == node_name
-    # TODO: Performance could be significantly improved using ordered node vector
-    idx = findfirst(pred, tree.nodes)
+    # Nodes are sorted by name at construction time of the Tree and never reordered
+    #   ==> Sorted search can be performed much more efficiently
+    comp(node, node_name) = node.name < node_name
+    idx = searchsortedfirst(tree.nodes, node_name; lt=comp)
     @assert !isnothing(idx)
     node = tree.nodes[idx]
     node 
