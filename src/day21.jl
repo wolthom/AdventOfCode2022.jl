@@ -79,21 +79,77 @@ function day21_part1(tree)
     calculate_cached!(cache, tree, root) 
 end
 
-function contains_node(tree, parent_node, goal_node)
+function contains_node(tree, parent_node, target_node)
+    parent_node.name == target_node.name && return true
     parent_node isa IntNode && return false
+    left_child = get_node(tree, parent_node.left_child)
+    right_child = get_node(tree, parent_node.right_child)
     return (
-            (parent_node.left_child == goal_node.name) ||
-            (parent_node.right_child == goal_node.name) ||
-            (contains_node(tree, get_node(tree, parent_node.left_child), goal_node)) ||
-            (contains_node(tree, get_node(tree, parent_node.right_child), goal_node))
+            (parent_node.left_child == target_node.name) ||
+            (parent_node.right_child == target_node.name) ||
+            (left_child isa OpNode && contains_node(tree, left_child, target_node)) ||
+            (right_child isa OpNode && contains_node(tree, right_child, target_node))
     )
 end
+
+function is_debug()
+    true
+end
+
+function reverse_ops(cache, tree, node, target_node, val)
+    node.name == "humn" && return val
+
+    subtree = ""
+
+    # Keep traversing the subtree that contains the "humn" node
+    while !(node isa IntNode)
+        right_node = get_node(tree, node.right_child)
+        left_node = get_node(tree, node.left_child)
+        right_val = calculate_cached!(cache, tree, right_node)
+        left_val = calculate_cached!(cache, tree, left_node)
+
+        (node, val) = if contains_node(tree, left_node, target_node)
+            # val = left 'op' right ==> left = val 'inv-op' right
+            new_val = node.op == '-' ? val + right_val :
+                        node.op == '+' ? val - right_val :
+                        node.op == '*' ? div(val, right_val) : val * right_val
+            (left_node, new_val)
+        else
+            # val = left 'op' right ==> right = left 'op' right
+            new_val = node.op == '-' ? left_val - val :
+                        node.op == '+' ? val - left_val :
+                        node.op == '*' ? div(val, left_val) : div(left_val, val)
+            (right_node, new_val)
+        end
+    end
+    node, val
+end
+
 
 function day21_part2(tree)
     tree = deepcopy(tree)
     # Grab relevant nodes
     root = get_node(tree, "root")
-    left = get_node(tree, root.left_child.name)
-    right = get_node(tree, root.right_child.name)
+    left = get_node(tree, root.left_child)
+    right = get_node(tree, root.right_child)
+    humn = get_node(tree, "humn")
 
+    # Calculate current result
+    cache = Dict{String7, Int}()
+    root_val = calculate_cached!(cache, tree, root) 
+
+    # Identify 
+    left_val = calculate_cached!(cache, tree, left)
+    right_val = calculate_cached!(cache, tree, right)
+
+    (target_val, start_node) = if contains_node(tree, left, humn)
+        (right_val, left)
+    elseif contains_node(tree, right, humn)
+        (left_val, right)
+    else 
+        throw(DomainError("Neither left nor right subtree contain 'humn' node"))
+    end
+
+    reverse_ops(cache, tree, start_node, humn, target_val)[2]
 end
+
