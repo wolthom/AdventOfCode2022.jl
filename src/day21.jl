@@ -92,10 +92,6 @@ function contains_node(tree, parent_node, target_node)
     )
 end
 
-function is_debug()
-    true
-end
-
 function reverse_ops(cache, tree, node, target_node, val)
     node.name == "humn" && return val
 
