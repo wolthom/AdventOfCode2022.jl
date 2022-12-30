@@ -39,12 +39,61 @@ function parse_line(line)
 end
 
 function parse_day21(inp_str)
-    nodes = map(parse_line, eachsplit(chomp(inp_str), '\n'))
+    nodes = Node[]
+    for line in eachsplit(chomp(inp_str), '\n')
+        push!(nodes, parse_line(line))
+    end
     Tree(nodes)
 end
 
-function day21_part1(inp)
+function get_node(tree::Tree, node_name)
+    pred(node) = node.name == node_name
+    # TODO: Performance could be significantly improved using ordered node vector
+    idx = findfirst(pred, tree.nodes)
+    @assert !isnothing(idx)
+    node = tree.nodes[idx]
+    node 
 end
 
-function day21_part2(inp)
+function calculate_cached!(cache, tree, node)
+    if haskey(cache, node.name)
+        return cache[node.name]
+    end
+
+    if node isa IntNode
+        return node.val
+    end
+
+    left_val = calculate_cached!(cache, tree, get_node(tree, node.left_child))
+    right_val = calculate_cached!(cache, tree, get_node(tree, node.right_child))
+    
+    node.op == '-' ? left_val - right_val :
+        node.op == '+' ? left_val + right_val :
+        node.op == '*' ? left_val * right_val : div(left_val, right_val)
+end
+
+function day21_part1(tree)
+    tree = deepcopy(tree)
+    cache = Dict{String7, Int}()
+    root = get_node(tree, "root")
+    calculate_cached!(cache, tree, root) 
+end
+
+function contains_node(tree, parent_node, goal_node)
+    parent_node isa IntNode && return false
+    return (
+            (parent_node.left_child == goal_node.name) ||
+            (parent_node.right_child == goal_node.name) ||
+            (contains_node(tree, get_node(tree, parent_node.left_child), goal_node)) ||
+            (contains_node(tree, get_node(tree, parent_node.right_child), goal_node))
+    )
+end
+
+function day21_part2(tree)
+    tree = deepcopy(tree)
+    # Grab relevant nodes
+    root = get_node(tree, "root")
+    left = get_node(tree, root.left_child.name)
+    right = get_node(tree, root.right_child.name)
+
 end
