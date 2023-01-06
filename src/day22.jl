@@ -1,6 +1,8 @@
+using Accessors
+
 @enum Field Empty Floor Rock
 
-@enum Orientation Left Right Top Bottom
+@enum Orientation Top=1 Left=2 Bottom=3 Right=4
 
 const Movement = Union{Char, Int}
 
@@ -45,10 +47,10 @@ function parse_day22(inp_str)
     movements = Vector{Movement}()
     for m in eachmatch(MOVEMENT_REGEX, movements_str)
         s = m[1]
-        if length(s) == 1
-            push!(movements, only(s))
-        else
+        if all(isdigit, s)
             push!(movements, parse(Int, s))
+        else
+            push!(movements, only(s))
         end
     end
 
@@ -58,14 +60,32 @@ end
 struct Pos
     x::Int
     y::Int
-    o::Orientation
+    or::Orientation
 end
 
 function first_pos(field)
     Pos(size(field, 1), 1, Right)
 end
 
+function rotate(pos, dir)
+    # Calculate new orientation
+    dir_val = dir == 'R' ? -1 : 1
+    or_val = Int(pos.or)
+    new_or_val = mod1(or_val + dir_val, 4)
+
+    # Return new position
+    @set pos.or = Orientation(new_or_val)
+end
+
+function apply_movement(pos, mov, field)
+    # Short circuit orientation change
+    if mov isa Char
+        return rotate(Pos, mov)
+    end
+end
+
 function day22_part1(inp)
+
 end
 
 function day22_part2(inp)
