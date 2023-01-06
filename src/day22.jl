@@ -93,7 +93,7 @@ function rotate(pos, dir)
     @set pos.or = Orientation(new_or_val)
 end
 
-function shift(pos, field)
+function shift_p1(pos, field)
     # Determine direction to move in
     delta = pos.or == Top ? CartesianIndex(-1, 0) :
             pos.or == Right ? CartesianIndex(0, 1) :
@@ -117,7 +117,7 @@ function shift(pos, field)
     @set pos.idx = new_idx
 end
 
-function apply_movement(pos, mov, field)
+function apply_movement(pos, mov, field; shift_func=shift_p1)
     # Short circuit orientation change
     if mov isa Char
         return rotate(pos, mov)
@@ -126,7 +126,7 @@ function apply_movement(pos, mov, field)
     # Retrieve scanline for current movement
     prev_pos = pos
     for _ in 1:mov
-        new_pos = shift(prev_pos, field)
+        new_pos = shift_func(prev_pos, field)
         field[new_pos.idx] == Rock && return prev_pos
         prev_pos = new_pos
     end
@@ -141,5 +141,35 @@ function day22_part1((field, movements))
     1000 * pos.idx[1] + 4 * pos.idx[2] + Int(pos.or) - 1
 end
 
-function day22_part2(inp)
+# TODO: P2
+function shift_p2(pos, field)
+    # Determine direction to move in
+    delta = pos.or == Top ? CartesianIndex(-1, 0) :
+            pos.or == Right ? CartesianIndex(0, 1) :
+            pos.or == Bottom ? CartesianIndex(1, 0) : CartesianIndex(0, -1)
+
+    # Determine coordinate delta in case of wrap-around
+    wrap = pos.or == Top ? CartesianIndex(size(field, 1), 0) :
+            pos.or == Right ? CartesianIndex(0, -size(field, 2)) :
+            pos.or == Bottom ? CartesianIndex(-size(field, 1), 0) : CartesianIndex(0, size(field, 2))
+    
+    # Calculate new index including wrap-around
+    new_idx = pos.idx + delta
+    new_idx += (1 - checkbounds(Bool, field, new_idx)) * wrap
+    field[new_idx] != Empty && return @set pos.idx = new_idx
+
+    # Keep moving if current field is empty
+    while (field[new_idx] == Empty)
+        new_idx = new_idx + delta
+        new_idx += (1 - checkbounds(Bool, field, new_idx)) * wrap
+    end
+    @set pos.idx = new_idx
+end
+
+function day22_part2((field, movements))
+    pos = first_pos(field)
+    for mov in movements
+        pos = apply_movement(pos, mov, field; shift_func=shift_p2)
+    end
+    1000 * pos.idx[1] + 4 * pos.idx[2] + Int(pos.or) - 1
 end
