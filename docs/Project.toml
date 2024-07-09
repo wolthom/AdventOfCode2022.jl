@@ -1,0 +1,4 @@
+[deps]
+AdventOfCode2022 = "79bfa421-b4fd-41d1-8cfd-e57d9c314976"
+Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+Literate = "98b081ad-f1c9-55d3-8b20-4c87d4299306"

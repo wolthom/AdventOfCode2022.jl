@@ -1,3 +1,6 @@
+"""
+Example doc string
+"""
 module AdventOfCode2022
 using Reexport
 
